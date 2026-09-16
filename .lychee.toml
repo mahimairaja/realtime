@@ -1,0 +1,15 @@
+# Keep local and CI link checks consistent.
+no_progress = true
+max_concurrency = 4
+max_retries = 2
+timeout = 30
+retry_wait_time = 2
+accept = ["200..=299"]
+include_fragments = "anchor-only"
+
+# This exact article intermittently returns 403 to lychee. Title, author, and
+# preview verified in a browser on 2026-09-15; the body is member-only.
+# Keep this narrow: other Medium links must still be checked.
+exclude = [
+    '^https://medium\.com/voice-ai-mastery/gpt-live-on-livekit-i-was-not-ready-for-this-5eab64d95988(\?sk=38988d5eff08b9773f9848a7133967a7)?$',
+]
