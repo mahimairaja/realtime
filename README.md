@@ -22,9 +22,12 @@ Read the architecture section, compare the controls, then open the notes for two
 
 Resource tags describe prerequisites: **🟢 Beginner**, **🟡 Intermediate**, **🔴 Advanced**. They are not model rankings.
 
-**Evidence:** reviewed on **2026-09-15** against documentation and source repositories. No model calls were run for this edition. “Documented” is not “tested”; “unverified” is not “unsupported.” Model, integration, and price rows carry last-verified dates. If a date is older than 60 days, check the source before you build on it.
+**Evidence:** reviewed on **2026-09-15** against documentation and source repositories. No model calls were run for this edition. “Documented” is not “tested.” A `?` means the reviewed documentation does not answer the question clearly. If a row is older than 60 days, check the source before you build on it.
 
 ## 📑 Contents
+
+<details>
+<summary><b>Expand the 11 sections</b></summary>
 
 1. [What realtime means](#-1-what-realtime-means)
 2. [Model comparison](#-2-model-comparison)
@@ -38,9 +41,11 @@ Resource tags describe prerequisites: **🟢 Beginner**, **🟡 Intermediate**, 
 10. [Hands-on examples](#-10-hands-on-examples)
 11. [Maintenance and contributing](#-11-maintenance-and-contributing)
 
+</details>
+
 ## 🧩 1. What realtime means
 
-Two questions describe the system: **what processes the audio**, and **how listening and speaking overlap**. A streaming connection alone does not establish full-duplex model behavior.
+Two questions describe the system: **what processes the audio**, and **how listening and speaking overlap**. Full-duplex behavior requires simultaneous listening and speaking; a streaming connection alone is insufficient.
 
 ```text
 Audio paths
@@ -65,6 +70,22 @@ The half-cascade requires a text response mode. Full-duplex adds simultaneous li
 
 These are selected hosted offerings with public documentation and pricing. OpenAI’s Realtime and Live APIs are separate products. Ultravox’s hosted service includes speech output; its open model emits text. Exact identifiers and qualifications are in [model notes](#-5-model-notes).
 
+| Model | Turn owner | Caller interrupts | Protected speech | Text reply | Tool chooser | History control |
+| --- | --- | --- | --- | --- | --- | --- |
+| [OpenAI Realtime 2.1][oai-model] | [App or server VAD][oai-vad] | [Yes: cancel + truncate][oai-conv] | [Client-side][oai-conv] | [Yes][oai-conv] | [Realtime model][oai-migration] | [Delete + truncate items][oai-conv] |
+| [OpenAI GPT-Live 1][live-model] | [Model][oai-migration] | [Model decides][live-controls] | [Block playback][live-controls] | [No via LiveKit][lk-live] | [Backend or your code][live-delegation] | [Append only via LiveKit][lk-live] |
+| [Gemini 3.8 Live][gem-model] | [App or automatic VAD][gem-cap] | [Yes: cancel][gem-cap] | [Client-side][gem-cap] | [No: audio response mode][gem-model] | [Live model][gem-thinking] | ? |
+| [Amazon Nova 2 Sonic][nova-model] | [Model endpointing][nova-input] | [Yes: barge-in][nova-output] | ? | ? | [Sonic][nova-tools] | [Seed before start][nova-history] |
+| [Grok Voice Think Fast 2.0][grok-guide] | [App or server VAD][grok-guide] | [Yes: cancel + truncate][grok-reference] | [Yes: `force_message`][grok-guide] | ? | [Agent][grok-guide] | [Delete + truncate][grok-reference] |
+| [Ultravox Realtime][uv-news] | [Hosted VAD][uv-vad] | [Yes][uv-messages] | [Yes: forced message][uv-messages] | [Yes][uv-messages] | [Agent][uv-tools] | ? |
+
+Protected speech means the API can keep a segment playing through caller audio. Client-side playback can suppress an interruption locally, but it does not create the same model-level guarantee. GPT-Live’s text and history cells describe the reviewed LiveKit adapter.
+
+All quick-matrix rows were last verified on **2026-09-15**.
+
+<details>
+<summary><b>Detailed controls, tools, and sources</b></summary>
+
 ### Conversation controls
 
 The cells below describe the native API or hosted service, unless explicitly labeled as an integration. Each linked source supports the adjacent behavior.
@@ -76,24 +97,31 @@ The cells below describe the native API or hosted service, unless explicitly lab
 | [Gemini 3.8 Live][gem-model] | [Automatic VAD or explicit activity boundaries][gem-cap]. | [VAD interruption cancels generation; client clears playback. History can include audio sent but not heard][gem-cap]. | 2026-09-15 |
 | [Amazon Nova 2 Sonic][nova-model] | [Model endpointing with configurable sensitivity][nova-input]. | [Barge-in stops generation; client clears its queue][nova-output]. [History is seeded before audio starts][nova-history]. | 2026-09-15 |
 | [Grok Voice Think Fast 2.0][grok-guide] | [Server VAD or manual input commit and response creation][grok-guide]. | [`response.cancel`, item deletion, and assistant-audio truncation][grok-reference]. | 2026-09-15 |
-| [Ultravox Realtime][uv-news] | [Hosted VAD with endpoint and interruption settings][uv-vad]. | [Forced messages can be uninterruptible; immediate user text can interrupt][uv-messages]. Arbitrary history deletion: unverified. | 2026-09-15 |
+| [Ultravox Realtime][uv-news] | [Hosted VAD with endpoint and interruption settings][uv-vad]. | [Forced messages can be uninterruptible; immediate user text can interrupt][uv-messages]. Arbitrary history deletion: `?` | 2026-09-15 |
 
 Gemini’s Extended Thinking variant shares the audio controls but changes how you track completion. See its [model note](#gemini-38-live-and-extended-thinking).
 
 ### Text output and tool execution
 
-“Text-only” means generating the reply as text for your own speech output. An audio transcript does not establish that capability. For custom functions, distinguish **which model selects a tool** from **the code that executes it**.
+“Text-only” means generating the reply as text for your own speech output. A transcript is not a text-only reply. For custom functions, distinguish which model selects a tool from the code that executes it.
 
 | Model / service | Text-only reply | Custom tool path | Last verified |
 | --- | --- | --- | --- |
 | OpenAI Realtime 2.1 | [Supported][oai-conv]. | [Realtime model selects; your application executes][oai-migration]. | 2026-09-15 |
-| OpenAI GPT-Live 1 | [Not supported by the LiveKit plugin][lk-live]; native independent text-only mode unverified. | [Responses delegation: backend selects, your application executes. Client delegation: your backend handles the work][live-delegation]. | 2026-09-15 |
+| OpenAI GPT-Live 1 | [Not supported by the LiveKit plugin][lk-live]; native independent mode: `?` | [Responses delegation: backend selects, your application executes. Client delegation: your backend handles the work][live-delegation]. | 2026-09-15 |
 | Gemini 3.8 Live | [Audio response mode with optional transcripts][gem-model]. | [Model requests functions; your application executes. Extended Thinking requires nonblocking tools][gem-thinking]. | 2026-09-15 |
-| Amazon Nova 2 Sonic | Unverified; text output events alone are insufficient evidence. | [Model selects; your application executes and returns results; asynchronous tools supported][nova-tools]. | 2026-09-15 |
-| Grok Voice Think Fast 2.0 | Unverified; text input and transcript events are documented. | [Agent selects; your application executes custom functions. Provider tools use separate server-side paths][grok-guide]. | 2026-09-15 |
+| Amazon Nova 2 Sonic | `?` | [Model selects; your application executes and returns results; asynchronous tools supported][nova-tools]. | 2026-09-15 |
+| Grok Voice Think Fast 2.0 | `?` | [Agent selects; your application executes custom functions. Provider tools use separate server-side paths][grok-guide]. | 2026-09-15 |
 | Ultravox Realtime | [Switch output between voice and text][uv-messages]. | [Agent selects; HTTP tools execute on your server, client tools in your application][uv-tools]. | 2026-09-15 |
 
+</details>
+
 ## 🎛️ 3. Controls that change your architecture
+
+Model-owned turns change endpointing, playback, tools, and conversation history. Open the notes before you depend on a control during a call.
+
+<details>
+<summary><b>Read the architecture caveats</b></summary>
 
 ### Endpointing and response initiation
 
@@ -115,9 +143,11 @@ Under GPT-Live Responses delegation, voice instructions explain when to delegate
 
 Appending a correction is different from deleting history. Starting another session is different from changing the current one. GPT-Live keeps its original voice/persona while accepting appended context; its native API permits some backend updates that LiveKit’s guide restricts. Realtime lets you update session settings, but its voice is fixed after the first audio output. [Live sessions][live-conv], [delegation][live-delegation], [LiveKit guide][lk-live], [Realtime sessions][oai-conv].
 
+</details>
+
 ## 🔀 4. Choosing a pipeline
 
-These are starting hypotheses for your own evaluation, not universal model rankings. The control distinctions above and [pipeline guide][lk-pipelines] explain the tradeoffs.
+Use this table to choose what to evaluate first. The control distinctions above and [pipeline guide][lk-pipelines] explain the tradeoffs.
 
 | Need | Start by evaluating | What to establish |
 | --- | --- | --- |
@@ -131,6 +161,11 @@ These are starting hypotheses for your own evaluation, not universal model ranki
 | Video or screen input | A model and integration exposing visual input. | The selected API mode, frame handling, and connection/session limits. |
 
 ## 🗒️ 5. Model notes
+
+Each note names the current model, its main control boundary, and the documentation needed to run it.
+
+<details>
+<summary><b>Open the 6 production model notes</b></summary>
 
 ### OpenAI Realtime 2.1
 
@@ -148,7 +183,7 @@ The API exposes turn controls, text-only output, and custom functions. The model
 
 `gpt-live-1` is the full-duplex voice frontend. It can delegate to a Responses model or your own backend. OpenAI records API general availability on September 10, 2026. [Model card][live-model], [release notes][oai-changelog].
 
-**Gotcha:** distinguish the native protocol from LiveKit’s adapter. Native transcript deltas can arrive while speech is streaming; the adapter documents completed conversation items after speech. Native Responses delegation accepts backend configuration updates; the adapter guide restricts backend instruction changes and still mentions alpha access. These documentation differences remain untested here. [Native sessions][live-conv], [delegation][live-delegation], [adapter guide][lk-live].
+**Gotcha:** distinguish the native protocol from LiveKit’s adapter. Native transcript deltas can arrive while speech is streaming; the adapter documents completed conversation items after speech. Native Responses delegation accepts backend configuration updates; the adapter guide restricts backend instruction changes and still mentions alpha access. Pin the adapter version and trace events before relying on either behavior. [Native sessions][live-conv], [delegation][live-delegation], [adapter guide][lk-live].
 
 - 🟢 [GPT-Live WebRTC quickstart][live-webrtc]: Start a native Live session.
 - 🟡 [Delegation guide][live-delegation]: Choose your backend and handle work that can outlive an interruption.
@@ -160,7 +195,7 @@ The API exposes turn controls, text-only output, and custom functions. The model
 
 The model IDs are `gemini-3.8-live` and `gemini-3.8-live-extended-thinking`. Both model pages label them stable. Standard Live and Extended Thinking have different completion/tool lifecycles; the latter uses `interaction_status` for ongoing work. [Standard model][gem-model], [Extended Thinking model][gem-ext], [thinking guide][gem-thinking].
 
-**Gotcha:** a spoken utterance ending does not necessarily mean background work is done. LiveKit’s reviewed plugin guide describes earlier Gemini versions; Pipecat’s guide describes the family, but these links do not establish full 3.8 Extended Thinking compatibility. [LiveKit][lk-gem], [Pipecat][pc-gem].
+**Gotcha:** a spoken utterance ending does not necessarily mean background work is done. LiveKit’s reviewed plugin guide describes earlier Gemini versions; Pipecat’s guide describes the family. Full 3.8 Extended Thinking compatibility: `?` [LiveKit][lk-gem], [Pipecat][pc-gem].
 
 - 🟢 [Live API overview][gem-live]: Native WebSocket setup and partner connection options.
 - 🟡 [Capabilities][gem-cap]: Audio formats, VAD, interruption, transcripts, and supported languages.
@@ -172,7 +207,7 @@ The catalog still lists 2.5 native-audio preview; use the [model catalog][gem-ca
 
 `amazon.nova-2-sonic-v1:0` runs through Amazon Bedrock’s bidirectional streaming API. It supports asynchronous tool use and accepts PCM audio at documented sample rates. [Model card][nova-model], [input events][nova-input], [tools][nova-tools].
 
-**Gotcha:** connections last at most eight minutes, so long calls need continuation. `SPECULATIVE` text previews speech; `FINAL` output accounts for completion or interruption. Do not use speculative wording as proof that a caller heard it. [Session guide][nova-overview], [output events][nova-output].
+**Gotcha:** connections last at most eight minutes, so long calls need continuation. `SPECULATIVE` text previews speech; use `FINAL` as the completion or interruption record. [Session guide][nova-overview], [output events][nova-output].
 
 - 🟢 [Conversational speech guide][nova-overview]: Start with Nova 2 Sonic’s event-based interface.
 - 🟡 [Tool configuration][nova-tools]: Function schemas, tool choice, and asynchronous execution.
@@ -204,44 +239,56 @@ The hosted default documented in the release notes is `ultravox-v0.7`. Ultravox�
 
 [Pricing](#-8-pricing) · [Release notes][uv-news]
 
+</details>
+
 ## 🔌 6. Integrations and transport
 
-These are **integration guides**, not a guarantee that every current model feature is exposed. Check exact IDs, package versions, and delegation modes. Vapi, LiveKit, and Pipecat are integrations; WebRTC, WebSocket, and Bedrock streaming are connection interfaces.
+Framework support varies by model version and transport. Check exact IDs, package versions, and delegation modes before choosing a deployment path.
+
+<details>
+<summary><b>Framework support, transport, and audio formats</b></summary>
+
+Vapi, LiveKit, and Pipecat are integrations. WebRTC, WebSocket, and Bedrock streaming are connection interfaces.
 
 | Model family | LiveKit guide | Pipecat guide | Version caveat | Last verified |
 | --- | --- | --- | --- | --- |
 | OpenAI Realtime | [Plugin][lk-oai] | [Service][pc-oai] | Check the selected model ID and VAD defaults. | 2026-09-15 |
 | OpenAI GPT-Live | [Plugin][lk-live] | [Service][pc-live] | Native API and adapter differ on delegation defaults and updates. | 2026-09-15 |
-| Gemini Live | [Plugin][lk-gem] | [Service][pc-gem] | 3.8 Extended Thinking lifecycle support unverified. | 2026-09-15 |
+| Gemini Live | [Plugin][lk-gem] | [Service][pc-gem] | 3.8 Extended Thinking lifecycle support: `?` | 2026-09-15 |
 | Nova 2 Sonic | [Plugin][lk-nova] | [Service][pc-nova] | Both guides name Nova 2; check session continuation. | 2026-09-15 |
 | Grok Voice | [Plugin][lk-grok] | [Service][pc-grok] | LiveKit’s documented default is older than xAI’s current model. | 2026-09-15 |
 | Ultravox | [Plugin][lk-uv] | [Service][pc-uv] | These target the hosted service. | 2026-09-15 |
 
-Vapi’s [Realtime guide][vapi-realtime] documents an older model roster, while its [OpenAI provider page][vapi-openai] lists Realtime 2. Current 2.1 and GPT-Live availability through Vapi remain unverified in this edition.
+Vapi’s [Realtime guide][vapi-realtime] documents an older model roster, while its [OpenAI provider page][vapi-openai] lists Realtime 2. Current 2.1 and GPT-Live availability through Vapi: `?`
 
 ### Audio at the API boundary
 
-Codec acceptance does not establish accuracy on a phone call. Resampling changes the sample rate; it cannot recover missing speech detail.
+A supported codec can still perform poorly on phone audio. Resampling changes the sample rate; it cannot recover missing speech detail.
 
 | Service | Direct connection | Documented narrowband path | Last verified |
 | --- | --- | --- | --- |
 | OpenAI Realtime | [WebRTC, WebSocket, SIP][oai-conv] | [G.711 μ-law/A-law][oai-schema]. | 2026-09-15 |
 | GPT-Live | [WebRTC][live-webrtc], [WebSocket][live-ws] | [8 kHz G.711 μ-law/A-law over WebSocket][live-ws]. | 2026-09-15 |
-| Gemini Live | [WebSocket; partner WebRTC][gem-live] | [PCM input is resampled; output is 24 kHz PCM][gem-cap]. Native G.711 unverified. | 2026-09-15 |
+| Gemini Live | [WebSocket; partner WebRTC][gem-live] | [PCM input is resampled; output is 24 kHz PCM][gem-cap]. Native G.711: `?` | 2026-09-15 |
 | Nova 2 Sonic | [Bedrock bidirectional stream][nova-model] | [8 kHz PCM supported][nova-input]. | 2026-09-15 |
 | Grok Voice | [WebSocket][grok-guide], [SIP][grok-sip] | [8 kHz PCM and G.711][grok-guide]. | 2026-09-15 |
 | Ultravox Realtime | [WebRTC / WebSocket][uv-ws], [SIP][uv-sip] | [SIP supports 8 kHz PCMU/PCMA][uv-sip]. | 2026-09-15 |
 
 For WebRTC fundamentals, SIP trunks, and Twilio Media Streams bridges, use [voiceai’s transport and telephony sections](https://github.com/mahimairaja/voiceai#-8-webrtc-fundamentals).
 
+</details>
+
 ## ✅ 7. Evaluation and benchmarks
 
 Use benchmarks to select candidates. Use your own recorded scenarios to choose a deployment. Check benchmark versions, model IDs, prompts, and transport before comparing scores.
 
+<details>
+<summary><b>Benchmarks, test harnesses, and a minimum test set</b></summary>
+
 | Resource | Measures | Boundary |
 | --- | --- | --- |
 | 🟢 [Artificial Analysis Speech-to-Speech][aa-speech] | Reasoning, agentic performance, preference, and other published components. | The index methodology changes; it does not measure your complete application. |
-| 🟡 [Big Bench Audio and methodology][aa-method] | Reasoning on spoken questions and response speed. | Question answering does not establish multi-turn task completion. |
+| 🟡 [Big Bench Audio and methodology][aa-method] | Reasoning on spoken questions and response speed. | Covers spoken question answering, not multi-turn task completion. |
 | 🟡 [τ-Voice][tau-voice] | Tool-backed customer-service tasks through native audio providers. | Simulated domains and provider adapters constrain what a score means. |
 | 🟡 [τ banking knowledge domain][tau-banking] | Retrieval and customer-service task outcomes. | State the voice configuration and dataset version; do not equate a text run with a voice result. |
 | 🟢 [Speech Agent Arena][aa-speech] | Human preference in live voice conversations. | Preference does not prove factual correctness or reliable tool execution. |
@@ -265,13 +312,34 @@ For a first comparison, repeat these scenarios with the same prompt, tools, tran
 
 Capture input audio, played output, transcript revisions, timestamped events, tool traces, final application state, and usage. Grade what happened as well as what the agent said. Record trial counts and latency percentiles; label observations as tested only when the reproduction is available.
 
+</details>
+
 ## 💵 8. Pricing
 
-**USD list prices, reviewed 2026-09-15.** Token rates below are per **one million tokens**. Rates are for the named native API or hosted service, before taxes, platform fees, carrier charges, and separately billed tools. AWS rates are for on-demand use in `us-east-1`.
+**USD list prices, reviewed 2026-09-15. Prices change. The date is the claim.** Rates exclude taxes, platform fees, carrier charges, and separately billed tools.
 
-Prices change. The date is the claim.
+### Five-minute starting estimates
+
+Assume a 300-second session with 150 seconds of caller speech, 150 seconds of model speech, and two custom tool calls. Tool payloads, text tokens, thinking, transcription, video, and external services are excluded because their usage is not defined by the call count.
+
+| Model or service | Starting estimate | Add separately | Source | Last verified |
+| --- | --- | --- | --- | --- |
+| OpenAI Realtime 2.1 | **At least $0.24** in direct audio | Reprocessed history, text, transcription, tools | [Pricing][oai-pricing], [token accounting][oai-cost] | 2026-09-15 |
+| OpenAI Realtime 2.1 Mini | **At least $0.075** in direct audio | Reprocessed history, text, transcription, tools | [Pricing][oai-pricing], [token accounting][oai-cost] | 2026-09-15 |
+| GPT-Live 1 | **$0.25** | Backend model and tools | [Pricing][oai-pricing], [cost guide][oai-cost] | 2026-09-15 |
+| Gemini 3.8 Live | **About $0.058** in audio | Text, thinking, tools, video | [Google pricing][gem-pricing] | 2026-09-15 |
+| Amazon Nova 2 Sonic | **?** | Calculate from reported audio and text tokens | [AWS pricing][aws-pricing], [rate data][aws-rates] | 2026-09-15 |
+| Grok Voice Think Fast 2.0 | **$0.40** in audio | Eligible text events and provider tools | [xAI pricing][grok-pricing] | 2026-09-15 |
+| Ultravox Realtime PAYGO | **$0.25** | SIP and external services | [Pricing][uv-pricing], [billing FAQ][uv-faq] | 2026-09-15 |
+
+OpenAI counts user audio at one token per 100 ms and assistant audio at one token per 50 ms. Each response also processes conversation history, so the Realtime figures are audio-content floors rather than complete call prices. Gemini publishes effective audio rates of $0.005 per input minute and $0.018 per output minute. Grok bills sent and received audio separately.
+
+<details>
+<summary><b>Unit rates and billing details</b></summary>
 
 ### Token-metered services
+
+Token rates below are per one million tokens. AWS rates are for on-demand use in `us-east-1`.
 
 | Model | Audio input / output | Text input / output | Source | Last verified |
 | --- | --- | --- | --- | --- |
@@ -281,32 +349,24 @@ Prices change. The date is the claim.
 | `gemini-3.8-live-extended-thinking` | $3 / $12 | $0.75 / $4.50 | [Google][gem-pricing] | 2026-09-15 |
 | `amazon.nova-2-sonic-v1:0` | $3 / $12 | $0.33 / $2.75 | [AWS pricing][aws-pricing], [rate data][aws-rates] | 2026-09-15 |
 
-OpenAI cached-input rates differ: Realtime 2.1 charges $0.40 per million cached audio or text input tokens; Mini charges $0.30 for cached audio and $0.06 for cached text. Images, transcription, backend work, and provider tools can add other meters. Google’s text output pricing includes thinking tokens. [OpenAI pricing][oai-pricing], [Google pricing][gem-pricing].
+OpenAI Realtime 2.1 charges $0.40 per million cached audio or text input tokens. Mini charges $0.30 for cached audio and $0.06 for cached text. Images, transcription, backend work, and provider tools can add other meters. Google includes thinking tokens in its text output rate.
 
 ### Duration and event meters
 
 | Service | Meter | Listed rate | Source | Last verified |
 | --- | --- | --- | --- | --- |
 | GPT-Live 1 | Connected session duration, including silence; billed per second. | $0.05/minute, plus backend and tools. | [OpenAI][oai-pricing], [cost guide][oai-cost] | 2026-09-15 |
-| Grok Voice Think Fast 2.0 | Audio sent **plus** audio received; certain client text events. | $0.08/audio minute + $0.004/client text message. Tool-result messages excluded. | [xAI][grok-pricing] | 2026-09-15 |
+| Grok Voice Think Fast 2.0 | Audio sent plus audio received; certain client text events. | $0.08/audio minute + $0.004/client text message. Tool-result messages excluded. | [xAI][grok-pricing] | 2026-09-15 |
 | Ultravox Realtime PAYGO | Call duration, in six-second billing increments. | $0.05/minute including hosted TTS; SIP costs extra. | [Pricing][uv-pricing], [billing FAQ][uv-faq], [TTS inclusion][uv-home] | 2026-09-15 |
 
-### What does a five-minute call cost?
-
-Five minutes and two tool calls do not specify audio tokens, tool-result size, thinking, or cached context. The examples below are calculations under stated assumptions, not measured calls.
-
-| Scenario | Calculation | What remains |
-| --- | --- | --- |
-| GPT-Live, exactly 300 billable session seconds | `300 / 60 × $0.05 = $0.25` | Backend tokens, tools, and connection/platform charges. |
-| Ultravox PAYGO, exactly 300 billable seconds, included hosted voice | `50 × 6 / 60 × $0.05 = $0.25` | SIP, external tools, or an independently billed voice configuration. |
-| Grok, 3 billed input-audio minutes + 2 output-audio minutes + 2 billable client text messages | `(3 + 2) × $0.08 + 2 × $0.004 = $0.408` | Provider tools and other service charges. Two tool calls are not the same as two billable text messages. |
-| Token-metered model, five-minute session with two custom tool calls | `Σ(billed units × unit rate)` | Read every response’s usage, including history, tool context, caching, and applicable thinking. |
-
-For an uncached, audio/text-only token example, let `Ai`, `Ao`, `Ti`, and `To` be the actual billed input/output audio and text token totals. Gemini 3.8 costs `(3Ai + 12Ao + 0.75Ti + 4.50To) / 1,000,000`; Nova 2 Sonic costs `(3Ai + 12Ao + 0.33Ti + 2.75To) / 1,000,000`. Use separate terms for every additional billing category. [Google rates][gem-pricing], [AWS rates][aws-rates].
+</details>
 
 ## 🔬 9. Research and open weights
 
 These projects publish inference code and weights. Availability was checked; local inference was not run. They are not all full-duplex models, and an open checkpoint is not equivalent to a hosted service. Read the code and weights licenses separately.
+
+<details>
+<summary><b>Open-weight models, code, papers, and surveys</b></summary>
 
 | Model | Shape and practical note | Paper / code / weights | Last verified |
 | --- | --- | --- | --- |
@@ -323,9 +383,14 @@ For the wider literature:
 - 🔴 [Awesome Speech Language Model](https://github.com/ddlBoJack/Awesome-Speech-Language-Model): Broader papers, code, and speech-language-model resources.
 - 🔴 [Full-duplex S2S survey](https://github.com/cyrta/awesome-full-duplex-speech-to-speech): An early survey outline; several catalog sections remain placeholders at this review.
 
+</details>
+
 ## 🛠️ 10. Hands-on examples
 
-Prefer examples with code or recorded evidence. A runnable example demonstrates an integration path; it does not establish a production reliability score.
+Prefer examples with code or recorded evidence. Treat a runnable example as integration evidence rather than a production reliability score.
+
+<details>
+<summary><b>Code and recorded implementations</b></summary>
 
 - 🟡 **GPT-Live:** [mahimailabs/gpt-live-voice-agent][own-demo]: Clinic-agent example comparing GPT-Live with a cascade, with read-back experiments and simulated callers.
 - 🟡 **GPT-Live:** [GPT-Live on LiveKit: Five Voice Agent Rules That Just Broke][own-article]: Companion Medium article (member-only); the example code is free. Interpret its observations with the current API and plugin notes above.
@@ -335,7 +400,14 @@ Prefer examples with code or recorded evidence. A runnable example demonstrates 
 
 **Disclosure:** this repository and the `mahimailabs` GPT-Live example and companion article are maintained or authored by Mahimai Raja. Vendor docs, framework guides, and independent evaluations are labeled by source throughout.
 
+</details>
+
 ## 🔄 11. Maintenance and contributing
+
+Repository changes, open evidence gaps, and the contribution rule are tracked here.
+
+<details>
+<summary><b>Changelog, needs verification, and contributing</b></summary>
 
 ### What changed
 
@@ -347,12 +419,14 @@ These are known evidence gaps, not negative capability claims:
 
 - **Text-only replies:** establish native independent text-only generation for GPT-Live, Nova 2 Sonic, and Grok Voice. Transcript events are insufficient.
 - **Gemini integrations:** reproduce 3.8 and Extended Thinking with pinned LiveKit/Pipecat versions, including background-work completion and interruption.
+- **Turn and history controls:** establish Nova 2 Sonic protected-speech behavior and Gemini’s arbitrary mid-session history editing.
+- **Gemini telephony audio:** verify native G.711 support rather than relying on resampled PCM.
 - **GPT-Live adapter:** reconcile its access label, backend-update restrictions, and transcript timing with native docs using a pinned implementation and event trace.
 - **Grok adapter:** verify the 2.0 model and current forced-speech controls through each integration; do not rely on an older default.
 - **Vapi roster:** verify current Realtime 2.1 and GPT-Live availability, beyond the older models shown in its guides.
 - **Languages:** Google’s [overview][gem-live] and [capabilities][gem-cap] give different totals. Use the named language list and test required language pairs. No comparable, verified count is published here for every model.
 - **History:** establish Ultravox’s arbitrary mid-session deletion behavior. Documented append or stage operations do not prove it.
-- **Metering:** verify Grok’s silence accounting and tool/SIP extras, and Ultravox’s independently billed voice configurations, before using an all-in estimate.
+- **Metering:** establish a documented duration-to-token estimate for Nova 2 Sonic. Verify Grok’s silence accounting and tool/SIP extras, and Ultravox’s independently billed voice configurations, before using an all-in estimate.
 
 ### Discuss and contribute
 
@@ -362,7 +436,7 @@ Open an issue for corrections and new evidence using the [matrix correction temp
 
 Weekly link checks find unreachable pages. They cannot establish that a capability or price is still correct. Review the claims separately and retain disagreements until they are resolved.
 
----
+</details>
 
 [MIT](LICENSE). Contributions welcome.
 
