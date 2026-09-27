@@ -36,7 +36,7 @@ const githubSlug = (s) =>
     .toLowerCase()
     .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}\u{200D}]/gu, '')
     .replace(/[^\p{L}\p{N}\s-]/gu, '')
-    .trim()
+    // No trim: GitHub keeps the space the emoji leaves, which is why the anchor starts with "-".
     .replace(/\s/g, '-');
 const pageSlug = (title) => githubSlug(title).replace(/^-+|-+$/g, '').replace(/-+/g, '-');
 
