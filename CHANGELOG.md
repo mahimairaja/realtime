@@ -2,6 +2,10 @@
 
 Changes to this reference. Dates record repository reviews, not inferred model release dates.
 
+## 2026-09-27
+
+- Added a website at realtime.mahimai.ca, built from this README by `site/`. The README stays the source; the site renders its sections, control matrix, and pricing estimates.
+
 ## 2026-09-15
 
 - Added the initial reference for hosted realtime speech APIs and selected open-weight models.

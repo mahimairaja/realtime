@@ -1,0 +1,142 @@
+---
+// The home page. Every heading, paragraph, table cell and link below comes from README.md via
+// src/data/readme.json; the only words written here are navigation and control labels.
+import { ArrowRight, ArrowUpRight, FileCheck2, GitPullRequest } from 'lucide-react';
+import AudioPaths from '../components/AudioPaths';
+import ControlMatrix from '../components/ControlMatrix';
+import CostBars from '../components/CostBars.astro';
+import Layout from '../components/Layout.astro';
+import { REPO, data, sectionHref } from '../lib/content';
+
+const { hero, matrix, sections } = data;
+const bySlug = (slug: string) => sections.find((s) => s.slug === slug)!;
+const comparison = bySlug('model-comparison');
+const pricing = bySlug('pricing');
+const what = bySlug('what-realtime-means');
+---
+
+<Layout title={`${hero.name}: ${hero.headline}`} description={hero.lede} path="/">
+  <section class="hero shell">
+    <div class="hero__copy">
+      <p class="hero__name"><span class="brand__mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>{hero.name}</p>
+      <h1>{hero.headline}</h1>
+      <p class="hero__lede">{hero.lede}</p>
+      <dl class="hero__stats">
+        <div><dt class="sr-only">Models</dt><dd><strong class="mono">{matrix.models.length}</strong> production models</dd></div>
+        <div><dt class="sr-only">Controls</dt><dd><strong class="mono">{matrix.controls.length}</strong> controls compared</dd></div>
+        <div><dt class="sr-only">Reviewed</dt><dd>reviewed <strong class="mono">{hero.reviewed}</strong> <span class="mono age" data-reviewed={hero.reviewed}></span></dd></div>
+      </dl>
+      <div class="hero__ctas">
+        <a class="btn btn--primary" href="#matrix">Compare the controls <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" /></a>
+        <a class="btn" href={`${REPO}/blob/main/README.md`} rel="noopener">Read the README <ArrowUpRight size={16} strokeWidth={1.75} aria-hidden="true" /></a>
+      </div>
+      <aside class="evidence" role="note">
+        <FileCheck2 size={18} strokeWidth={1.75} aria-hidden="true" />
+        <div class="prose" set:html={hero.evidenceHtml} />
+      </aside>
+    </div>
+    <div class="hero__panel">
+      <div class="panel">
+        <p class="panel__title"><a href={sectionHref(what)}><span class="mono">01</span> {what.title}</a></p>
+        <div class="panel__text prose" set:html={data.pathsHtml} />
+        <AudioPaths client:visible paths={data.paths} />
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter" id="matrix" aria-labelledby="matrix-title">
+    <div class="shell">
+      <div class="head">
+        <h2 id="matrix-title">Who owns the turn</h2>
+        <div class="prose" set:html={data.turnHtml} />
+      </div>
+      <ControlMatrix client:load controls={matrix.controls} models={matrix.models} />
+      <div class="notes prose">
+        {matrix.notes.map((n) => <Fragment set:html={n} />)}
+      </div>
+      <a class="more" href={sectionHref(comparison)}>
+        Detailed controls, tools, and sources <ArrowRight size={15} strokeWidth={1.75} aria-hidden="true" />
+      </a>
+    </div>
+  </section>
+
+  <section class="chapter" id="cost" aria-labelledby="cost-title">
+    <div class="shell">
+      <div class="head">
+        <h2 id="cost-title">A five-minute call, priced</h2>
+        <div class="prose" set:html={data.estimates.headlineHtml} />
+        <div class="prose" set:html={data.estimates.introHtml} />
+      </div>
+      <CostBars />
+      <a class="more" href={sectionHref(pricing)}>
+        Unit rates and billing details <ArrowRight size={15} strokeWidth={1.75} aria-hidden="true" />
+      </a>
+    </div>
+  </section>
+
+  <section class="chapter" id="sections" aria-labelledby="sections-title">
+    <div class="shell">
+      <div class="head">
+        <h2 id="sections-title">The reference</h2>
+        <p>Every section of the README, with its collapsed tables and notes opened up.</p>
+      </div>
+      <ul class="cards">
+        {
+          sections.map((s) => (
+            <li data-card>
+              <a class="card" href={sectionHref(s)}>
+                <span class="card__top">
+                  <span class="card__tab mono">{String(s.num).padStart(2, '0')}</span>
+                </span>
+                <span class="card__title">{s.title}</span>
+                <span class="card__intro">{s.intro}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="chapter" aria-labelledby="contrib-title">
+    <div class="shell contrib">
+      <div>
+        <h2 id="contrib-title">Found a claim that is wrong?</h2>
+        <div class="prose" set:html={data.ruleHtml} />
+      </div>
+      <a class="btn" href={`${REPO}/blob/main/.github/ISSUE_TEMPLATE/matrix-correction.md`} rel="noopener"
+        ><GitPullRequest size={16} strokeWidth={1.75} aria-hidden="true" /> Correct the matrix</a
+      >
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { animate, stagger } from 'animejs';
+  // How old the review is, against the reader's clock: the README's own 60-day rule.
+  document.querySelectorAll<HTMLElement>('[data-reviewed]').forEach((el) => {
+    const days = Math.floor((Date.now() - Date.parse(`${el.dataset.reviewed}T00:00:00Z`)) / 86_400_000);
+    if (days >= 0) {
+      el.textContent = days === 0 ? '(today)' : `(${days} day${days === 1 ? '' : 's'} ago)`;
+      if (days > 60) el.dataset.stale = '';
+    }
+  });
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const reveal = (selector: string, opts: Record<string, unknown>) => {
+      const els = [...document.querySelectorAll<HTMLElement>(selector)];
+      els.forEach((el) => (el.style.opacity = '0'));
+      const io = new IntersectionObserver(
+        (entries) => {
+          const shown = entries.filter((e) => e.isIntersecting).map((e) => e.target as HTMLElement);
+          if (!shown.length) return;
+          shown.forEach((el) => io.unobserve(el));
+          animate(shown, { opacity: [0, 1], translateY: [12, 0], duration: 600, ease: 'outExpo', delay: stagger(45), ...opts });
+        },
+        { threshold: 0.15 },
+      );
+      els.forEach((el) => io.observe(el));
+    };
+    reveal('[data-card]', {});
+    reveal('[data-cost]', {});
+  }
+</script>

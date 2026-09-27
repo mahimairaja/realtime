@@ -1,0 +1,41 @@
+---
+// Section 8's five-minute starting estimates as bars. Width is the stated estimate; a floor
+// ("at least") is drawn open-ended, and a "?" row stays in the list as "not published".
+import { data } from '../lib/content';
+
+const rows = data.estimates.rows;
+const max = Math.max(...rows.map((r) => r.amount ?? 0));
+---
+
+<div class="cost">
+  <ul class="cost__list">
+    {
+      rows.map((r) => (
+        <li class="cost__row" data-cost>
+          <span class="cost__model">{r.model}</span>
+          <span class="cost__track">
+            {r.amount !== null ? (
+              <span class="cost__bar" data-floor={r.floor || undefined} style={`width:${Math.max(4, (r.amount / max) * 100)}%`} />
+            ) : (
+              <span class="cost__none">No duration estimate published</span>
+            )}
+          </span>
+          <span class="cost__value mono">
+            {r.amount !== null ? (
+              <>
+                {(r.floor || r.approx) && <span class="cost__q">{r.floor ? 'at least' : 'about'}</span>}${r.amount.toFixed(r.amount < 0.1 ? 3 : 2)}
+              </>
+            ) : (
+              '?'
+            )}
+          </span>
+          <span class="cost__meta">
+            <span>+ {r.extra}</span>
+            <span class="cost__src" set:html={r.sourceHtml} />
+            <span class="mono">{r.verified}</span>
+          </span>
+        </li>
+      ))
+    }
+  </ul>
+</div>
