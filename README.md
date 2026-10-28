@@ -68,7 +68,7 @@ The half-cascade requires a text response mode. Full-duplex adds simultaneous li
 
 ## 📊 2. Model comparison
 
-These are selected hosted offerings with public documentation and pricing. OpenAI’s Realtime and Live APIs are separate products. Ultravox’s hosted service includes speech output; its open model emits text. Exact identifiers and qualifications are in [model notes](#-5-model-notes).
+These are selected hosted offerings with public documentation and pricing. OpenAI’s Realtime and Live APIs are separate products. Ultravox’s hosted service includes speech output; its open model emits text. Eleven Realtime is a cascade served behind an OpenAI-compatible Realtime API. Exact identifiers and qualifications are in [model notes](#-5-model-notes).
 
 | Model | Turn owner | Caller interrupts | Protected speech | Text reply | Tool chooser | History control |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -76,12 +76,13 @@ These are selected hosted offerings with public documentation and pricing. OpenA
 | [OpenAI GPT-Live 1][live-model] | [Model][oai-migration] | [Model decides][live-controls] | [Block playback][live-controls] | [No via LiveKit][lk-live] | [Backend or your code][live-delegation] | [Append only via LiveKit][lk-live] |
 | [Gemini 3.8 Live][gem-model] | [App or automatic VAD][gem-cap] | [Yes: cancel][gem-cap] | [Client-side][gem-cap] | [No: audio response mode][gem-model] | [Live model][gem-thinking] | ? |
 | [Amazon Nova 2 Sonic][nova-model] | [Model endpointing][nova-input] | [Yes: barge-in][nova-output] | ? | ? | [Sonic][nova-tools] | [Seed before start][nova-history] |
-| [Grok Voice Think Fast 2.0][grok-guide] | [App or server VAD][grok-guide] | [Yes: cancel + truncate][grok-reference] | [Yes: `force_message`][grok-guide] | ? | [Agent][grok-guide] | [Delete + truncate][grok-reference] |
+| [Grok Voice 3.0][grok-guide] | [App or server VAD][grok-guide] | [Yes: cancel + truncate][grok-reference] | [Yes: `force_message`][grok-guide] | ? | [Agent][grok-guide] | [Delete + truncate][grok-reference] |
 | [Ultravox Realtime][uv-news] | [Hosted VAD][uv-vad] | [Yes][uv-messages] | [Yes: forced message][uv-messages] | [Yes][uv-messages] | [Agent][uv-tools] | ? |
+| [Eleven Realtime v1][el-blog] | [Semantic VAD][el-compat] | ? | ? | ? | [Realtime model][el-models] | ? |
 
 Protected speech means the API can keep a segment playing through caller audio. Client-side playback can suppress an interruption locally, but it does not create the same model-level guarantee. GPT-Live’s text and history cells describe the reviewed LiveKit adapter.
 
-All quick-matrix rows were last verified on **2026-09-15**.
+Quick-matrix rows were last verified on **2026-09-15**, except Grok Voice and Eleven Realtime, verified on **2026-10-28**.
 
 <details>
 <summary><b>Detailed controls, tools, and sources</b></summary>
@@ -96,8 +97,9 @@ The cells below describe the native API or hosted service, unless explicitly lab
 | [OpenAI GPT-Live 1][live-model] | [Voice model decides when to speak; `response.create` triggers backend work][oai-migration]. | [Playback can be blocked][live-controls]. [LiveKit documents no model-history truncation][lk-live]. | 2026-09-15 |
 | [Gemini 3.8 Live][gem-model] | [Automatic VAD or explicit activity boundaries][gem-cap]. | [VAD interruption cancels generation; client clears playback. History can include audio sent but not heard][gem-cap]. | 2026-09-15 |
 | [Amazon Nova 2 Sonic][nova-model] | [Model endpointing with configurable sensitivity][nova-input]. | [Barge-in stops generation; client clears its queue][nova-output]. [History is seeded before audio starts][nova-history]. | 2026-09-15 |
-| [Grok Voice Think Fast 2.0][grok-guide] | [Server VAD or manual input commit and response creation][grok-guide]. | [`response.cancel`, item deletion, and assistant-audio truncation][grok-reference]. | 2026-09-15 |
+| [Grok Voice 3.0][grok-guide] | [Server VAD or manual input commit and response creation][grok-guide]. | [`response.cancel`, item deletion, and assistant-audio truncation][grok-reference]. | 2026-10-28 |
 | [Ultravox Realtime][uv-news] | [Hosted VAD with endpoint and interruption settings][uv-vad]. | [Forced messages can be uninterruptible; immediate user text can interrupt][uv-messages]. Arbitrary history deletion: `?` | 2026-09-15 |
+| [Eleven Realtime v1][el-blog] | [OpenAI Realtime client and server events; the guide configures semantic VAD][el-compat]. | The guide does not list the supported interruption and history events: `?` | 2026-10-28 |
 
 Gemini’s Extended Thinking variant shares the audio controls but changes how you track completion. See its [model note](#gemini-38-live-and-extended-thinking).
 
@@ -111,8 +113,9 @@ Gemini’s Extended Thinking variant shares the audio controls but changes how y
 | OpenAI GPT-Live 1 | [Not supported by the LiveKit plugin][lk-live]; native independent mode: `?` | [Responses delegation: backend selects, your application executes. Client delegation: your backend handles the work][live-delegation]. | 2026-09-15 |
 | Gemini 3.8 Live | [Audio response mode with optional transcripts][gem-model]. | [Model requests functions; your application executes. Extended Thinking requires nonblocking tools][gem-thinking]. | 2026-09-15 |
 | Amazon Nova 2 Sonic | `?` | [Model selects; your application executes and returns results; asynchronous tools supported][nova-tools]. | 2026-09-15 |
-| Grok Voice Think Fast 2.0 | `?` | [Agent selects; your application executes custom functions. Provider tools use separate server-side paths][grok-guide]. | 2026-09-15 |
+| Grok Voice 3.0 | `?` | [Agent selects; your application executes custom functions. Provider tools use separate server-side paths][grok-guide]. | 2026-10-28 |
 | Ultravox Realtime | [Switch output between voice and text][uv-messages]. | [Agent selects; HTTP tools execute on your server, client tools in your application][uv-tools]. | 2026-09-15 |
+| Eleven Realtime v1 | `?` | [Model selects; Max is the documented choice for multi-step tool use][el-models]. | 2026-10-28 |
 
 </details>
 
@@ -165,7 +168,7 @@ Use this table to choose what to evaluate first. The control distinctions above 
 Each note names the current model, its main control boundary, and the documentation needed to run it.
 
 <details>
-<summary><b>Open the 6 production model notes</b></summary>
+<summary><b>Open the 7 production model notes</b></summary>
 
 ### OpenAI Realtime 2.1
 
@@ -184,6 +187,8 @@ The API exposes turn controls, text-only output, and custom functions. The model
 `gpt-live-1` is the full-duplex voice frontend. It can delegate to a Responses model or your own backend. OpenAI records API general availability on September 10, 2026. [Model card][live-model], [release notes][oai-changelog].
 
 **Gotcha:** distinguish the native protocol from LiveKit’s adapter. Native transcript deltas can arrive while speech is streaming; the adapter documents completed conversation items after speech. Native Responses delegation accepts backend configuration updates; the adapter guide restricts backend instruction changes and still mentions alpha access. Pin the adapter version and trace events before relying on either behavior. [Native sessions][live-conv], [delegation][live-delegation], [adapter guide][lk-live].
+
+October 2026 additions: Live can delegate to the Decisions API (`gpt-6-luna`) natively (October 15), and prompt-to-voice custom voices plus nine new voices arrived on October 16. [Release notes][oai-changelog].
 
 - 🟢 [GPT-Live WebRTC quickstart][live-webrtc]: Start a native Live session.
 - 🟡 [Delegation guide][live-delegation]: Choose your backend and handle work that can outlive an interruption.
@@ -215,11 +220,11 @@ The catalog still lists 2.5 native-audio preview; use the [model catalog][gem-ca
 
 [Pricing](#-8-pricing) · [Release notes][nova-changelog]
 
-### Grok Voice Think Fast 2.0
+### Grok Voice 3.0
 
-Use `grok-voice-think-fast-2.0`; `grok-voice-latest` is a moving alias. The API exposes manual or automatic turns, custom functions, transcript events, and forced speech. [Guide][grok-guide], [event reference][grok-reference].
+Use `grok-voice-3.0`. Since October 14, 2026, the moving alias `grok-voice-latest` points to it, and `grok-voice-2.0` is deprecated. The API exposes manual or automatic turns, custom functions, transcript events, and forced speech. [Guide][grok-guide], [event reference][grok-reference], [release notes][grok-changelog].
 
-**Gotcha:** the price meters audio sent and received, plus certain client text events. It is not a flat elapsed-session price. LiveKit’s reviewed guide still defaults to the older 1.0 model. Pin the model explicitly and check your adapter’s accepted options. [Pricing source][grok-pricing], [LiveKit guide][lk-grok].
+**Gotcha:** with the default server VAD, xAI bills the whole session duration, silence included. Manual turns bill only audio sent and received. Certain client text events cost extra, and sessions last at most 120 minutes. LiveKit’s reviewed guide still defaults to an older model. Pin the model explicitly and check your adapter’s accepted options. [Pricing source][grok-pricing], [LiveKit guide][lk-grok].
 
 - 🟢 [Speech-to-speech guide][grok-guide]: Connect, choose formats, and respond to tool requests.
 - 🟡 [Voice event reference][grok-reference]: Cancellation, transcript deltas, and conversation-item operations.
@@ -238,6 +243,17 @@ The hosted default documented in the release notes is `ultravox-v0.7`. Ultravox�
 - 🟡 [HTTP versus client tools][uv-tools]: Choose where your functions execute.
 
 [Pricing](#-8-pricing) · [Release notes][uv-news]
+
+### Eleven Realtime v1
+
+`eleven_realtime_v1_mini` is the low-latency, low-cost default. `eleven_realtime_v1_max` targets complex instructions and multi-step tool use. ElevenLabs announced both on October 20, 2026, and is rolling them out to workspaces gradually. [Launch post][el-blog], [model guide][el-models].
+
+**Gotcha:** this is a cascade behind a realtime API. ElevenLabs states that each component is a distinct model. The API reuses OpenAI Realtime events over WebSocket only, so an OpenAI client can switch by changing the endpoint and key. The guide covers browser clients; server-side SDK docs are not published yet. Mini is unavailable under Zero Retention Mode and HIPAA. [Compatibility guide][el-compat], [model guide][el-models].
+
+- 🟢 [OpenAI Realtime compatibility guide][el-compat]: Point an OpenAI Realtime client at ElevenLabs with a short-lived secret.
+- 🟡 [Realtime models in ElevenAgents][el-models]: Choose Mini or Max, and check workspace, retention, and residency limits.
+
+[Pricing](#-8-pricing) · [Launch post][el-blog]
 
 </details>
 
@@ -258,6 +274,7 @@ Vapi, LiveKit, and Pipecat are integrations. WebRTC, WebSocket, and Bedrock stre
 | Nova 2 Sonic | [Plugin][lk-nova] | [Service][pc-nova] | Both guides name Nova 2; check session continuation. | 2026-09-15 |
 | Grok Voice | [Plugin][lk-grok] | [Service][pc-grok] | LiveKit’s documented default is older than xAI’s current model. | 2026-09-15 |
 | Ultravox | [Plugin][lk-uv] | [Service][pc-uv] | These target the hosted service. | 2026-09-15 |
+| Eleven Realtime | ? | ? | No dedicated guide at review. The API is OpenAI Realtime-compatible over WebSocket; check whether your OpenAI adapter accepts a custom endpoint. | 2026-10-28 |
 
 Vapi’s [Realtime guide][vapi-realtime] documents an older model roster, while its [OpenAI provider page][vapi-openai] lists Realtime 2. Current 2.1 and GPT-Live availability through Vapi: `?`
 
@@ -271,8 +288,9 @@ A supported codec can still perform poorly on phone audio. Resampling changes th
 | GPT-Live | [WebRTC][live-webrtc], [WebSocket][live-ws] | [8 kHz G.711 μ-law/A-law over WebSocket][live-ws]. | 2026-09-15 |
 | Gemini Live | [WebSocket; partner WebRTC][gem-live] | [PCM input is resampled; output is 24 kHz PCM][gem-cap]. Native G.711: `?` | 2026-09-15 |
 | Nova 2 Sonic | [Bedrock bidirectional stream][nova-model] | [8 kHz PCM supported][nova-input]. | 2026-09-15 |
-| Grok Voice | [WebSocket][grok-guide], [SIP][grok-sip] | [8 kHz PCM and G.711][grok-guide]. | 2026-09-15 |
+| Grok Voice | [WebSocket][grok-guide], [SIP][grok-sip] | [8 kHz PCM and G.711][grok-guide]. | 2026-10-28 |
 | Ultravox Realtime | [WebRTC / WebSocket][uv-ws], [SIP][uv-sip] | [SIP supports 8 kHz PCMU/PCMA][uv-sip]. | 2026-09-15 |
+| Eleven Realtime | [WebSocket only][el-compat] | Examples use 24 kHz PCM16. Native G.711: `?` | 2026-10-28 |
 
 For WebRTC fundamentals, SIP trunks, and Twilio Media Streams bridges, use [voiceai’s transport and telephony sections](https://github.com/mahimairaja/voiceai#-8-webrtc-fundamentals).
 
@@ -316,7 +334,7 @@ Capture input audio, played output, transcript revisions, timestamped events, to
 
 ## 💵 8. Pricing
 
-**USD list prices, reviewed 2026-09-15. Prices change. The date is the claim.** Rates exclude taxes, platform fees, carrier charges, and separately billed tools.
+**USD list prices, reviewed 2026-09-15 (Grok Voice and Eleven Realtime: 2026-10-28). Prices change. The date is the claim.** Rates exclude taxes, platform fees, carrier charges, and separately billed tools.
 
 ### Five-minute starting estimates
 
@@ -329,10 +347,11 @@ Assume a 300-second session with 150 seconds of caller speech, 150 seconds of mo
 | GPT-Live 1 | **$0.25** | Backend model and tools | [Pricing][oai-pricing], [cost guide][oai-cost] | 2026-09-15 |
 | Gemini 3.8 Live | **About $0.058** in audio | Text, thinking, tools, video | [Google pricing][gem-pricing] | 2026-09-15 |
 | Amazon Nova 2 Sonic | **?** | Calculate from reported audio and text tokens | [AWS pricing][aws-pricing], [rate data][aws-rates] | 2026-09-15 |
-| Grok Voice Think Fast 2.0 | **$0.40** in audio | Eligible text events and provider tools | [xAI pricing][grok-pricing] | 2026-09-15 |
+| Grok Voice 3.0 | **$0.40** with server VAD | Eligible text events and provider tools | [xAI pricing][grok-pricing] | 2026-10-28 |
 | Ultravox Realtime PAYGO | **$0.25** | SIP and external services | [Pricing][uv-pricing], [billing FAQ][uv-faq] | 2026-09-15 |
+| Eleven Realtime v1 | **$0.40** in connected audio | Mini or Max token charges | [ElevenLabs pricing][el-pricing] | 2026-10-28 |
 
-OpenAI counts user audio at one token per 100 ms and assistant audio at one token per 50 ms. Each response also processes conversation history, so the Realtime figures are audio-content floors rather than complete call prices. Gemini publishes effective audio rates of $0.005 per input minute and $0.018 per output minute. Grok bills sent and received audio separately.
+OpenAI counts user audio at one token per 100 ms and assistant audio at one token per 50 ms. Each response also processes conversation history, so the Realtime figures are audio-content floors rather than complete call prices. Gemini publishes effective audio rates of $0.005 per input minute and $0.018 per output minute. Grok bills session duration under server VAD, and only sent and received audio with manual turns.
 
 <details>
 <summary><b>Unit rates and billing details</b></summary>
@@ -356,8 +375,9 @@ OpenAI Realtime 2.1 charges $0.40 per million cached audio or text input tokens.
 | Service | Meter | Listed rate | Source | Last verified |
 | --- | --- | --- | --- | --- |
 | GPT-Live 1 | Connected session duration, including silence; billed per second. | $0.05/minute, plus backend and tools. | [OpenAI][oai-pricing], [cost guide][oai-cost] | 2026-09-15 |
-| Grok Voice Think Fast 2.0 | Audio sent plus audio received; certain client text events. | $0.08/audio minute + $0.004/client text message. Tool-result messages excluded. | [xAI][grok-pricing] | 2026-09-15 |
+| Grok Voice 3.0 | Session duration with server VAD; audio sent plus received with manual turns; certain client text events. | $0.08/minute + $0.004 per client `conversation.item.create`. Tool results and `response.create` excluded. | [xAI][grok-pricing] | 2026-10-28 |
 | Ultravox Realtime PAYGO | Call duration, in six-second billing increments. | $0.05/minute including hosted TTS; SIP costs extra. | [Pricing][uv-pricing], [billing FAQ][uv-faq], [TTS inclusion][uv-home] | 2026-09-15 |
+| Eleven Realtime v1 | Connected audio minutes, plus tokens. | $0.08/minute. Tokens per 1M input / output: Mini $0.20 / $6.00, Max $1.80 / $9.00. | [ElevenLabs][el-pricing], [model guide][el-models] | 2026-10-28 |
 
 </details>
 
@@ -374,8 +394,9 @@ These projects publish inference code and weights. Availability was checked; loc
 | 🔴 PersonaPlex | Moshi-based full-duplex model with role prompts and voice conditioning. | [Paper](https://arxiv.org/abs/2602.06053) · [Code](https://github.com/NVIDIA/personaplex) · [Weights](https://huggingface.co/nvidia/personaplex-7b-v1) | 2026-09-15 |
 | 🔴 Qwen3-Omni Instruct | Audio/video/text input with speech output; select Instruct for the speech-generating variant. | [Paper](https://arxiv.org/abs/2509.17765) · [Code](https://github.com/QwenLM/Qwen3-Omni) · [Weights](https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct) | 2026-09-15 |
 | 🔴 Mini-Omni2 | Research audio/vision assistant with inference and chat demo code. | [Paper](https://arxiv.org/abs/2410.11190) · [Code](https://github.com/gpt-omni/mini-omni2) · [Weights](https://huggingface.co/gpt-omni/mini-omni2) | 2026-09-15 |
+| 🔴 NemotronLabs VoiceChat 11B | English full-duplex speech model with tool calling, about 450 ms turn-taking (vendor). Weights use the OpenMDW 1.1 license; check it before production use. | [Code](https://github.com/NVIDIA-NeMo/Speech/tree/nemotron-labs-voicechat) · [Weights](https://huggingface.co/nvidia/NVIDIA-NemotronLabs-VoiceChat-11B) | 2026-10-28 |
 
-[Sesame CSM](https://github.com/SesameAILabs/csm) is a speech-generation component that needs a separate text-generating model. [Kyutai Unmute](https://github.com/kyutai-labs/unmute) is a cascade of STT, a text LLM, and TTS. Both are useful related work; neither is a substitute row for a native conversational API.
+[Sesame CSM](https://github.com/SesameAILabs/csm) is a speech-generation component that needs a separate text-generating model. [Kyutai Unmute](https://github.com/kyutai-labs/unmute) is a cascade of STT, a text LLM, and TTS. Both are useful related work; neither is a substitute row for a native conversational API. Block’s [Dessa](https://block.xyz/dessa) is a full-duplex model trained on audio alone; it is a research preview with no public weights or API at this review.
 
 For the wider literature:
 
@@ -411,6 +432,8 @@ Repository changes, open evidence gaps, and the contribution rule are tracked he
 
 ### What changed
 
+**October 2026:** Grok Voice 3.0 replaces Think Fast 2.0, Eleven Realtime v1 joins the comparison, GPT-Live’s October additions are noted, and NemotronLabs VoiceChat joins the open weights.
+
 **September 2026:** initial reference, dated API comparisons and pricing, model-specific integration caveats, and reproducible evaluation resources. See [CHANGELOG.md](CHANGELOG.md) for repository changes and each model’s release notes for vendor announcements.
 
 ### Needs verification
@@ -422,7 +445,9 @@ These are known evidence gaps, not negative capability claims:
 - **Turn and history controls:** establish Nova 2 Sonic protected-speech behavior and Gemini’s arbitrary mid-session history editing.
 - **Gemini telephony audio:** verify native G.711 support rather than relying on resampled PCM.
 - **GPT-Live adapter:** reconcile its access label, backend-update restrictions, and transcript timing with native docs using a pinned implementation and event trace.
-- **Grok adapter:** verify the 2.0 model and current forced-speech controls through each integration; do not rely on an older default.
+- **Grok adapter:** verify the 3.0 model and current forced-speech controls through each integration; do not rely on an older default.
+- **Eleven Realtime:** establish which OpenAI Realtime events (cancel, truncate, item deletion, text-only output) the compatible API honors, and its narrowband audio support.
+- **New candidates:** PolyAI’s [Dialog-RSN-1](https://docs.poly.ai/dialog-rsn-1/quickstart) offers an OpenAI-compatible realtime API with audio or text-only output. Add a row once its pricing and interruption controls are documented.
 - **Vapi roster:** verify current Realtime 2.1 and GPT-Live availability, beyond the older models shown in its guides.
 - **Languages:** Google’s [overview][gem-live] and [capabilities][gem-cap] give different totals. Use the named language list and test required language pairs. No comparable, verified count is published here for every model.
 - **History:** establish Ultravox’s arbitrary mid-session deletion behavior. Documented append or stage operations do not prove it.
@@ -491,6 +516,10 @@ Weekly link checks find unreachable pages. They cannot establish that a capabili
 [uv-pricing]: https://www.ultravox.ai/pricing
 [uv-home]: https://www.ultravox.ai/
 [uv-faq]: https://docs.ultravox.ai/gettingstarted/faq
+[el-blog]: https://elevenlabs.io/blog/realtime
+[el-models]: https://elevenlabs.io/docs/eleven-agents/customization/realtime-models
+[el-compat]: https://elevenlabs.io/docs/eleven-agents/guides/openai-realtime-compatibility
+[el-pricing]: https://elevenlabs.io/pricing/api
 [lk-oai]: https://docs.livekit.io/agents/models/realtime/plugins/openai/
 [lk-live]: https://docs.livekit.io/agents/models/realtime/plugins/gpt-live/
 [lk-gem]: https://docs.livekit.io/agents/models/realtime/plugins/gemini/

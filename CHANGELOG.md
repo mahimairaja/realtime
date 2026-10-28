@@ -2,6 +2,16 @@
 
 Changes to this reference. Dates record repository reviews, not inferred model release dates.
 
+## 2026-10-28
+
+- Renamed the Grok row to Grok Voice 3.0 (`grok-voice-3.0`, now behind `grok-voice-latest`; `grok-voice-2.0` is deprecated) and updated its billing meter: server VAD sessions bill full duration.
+- Added Eleven Realtime v1 (Mini and Max) to the matrix, controls, model notes, transport, and pricing, with unknown cells marked `?`.
+- Noted GPT-Live’s October additions: native Decisions API delegation and prompt-to-voice voices.
+- Added NemotronLabs VoiceChat 11B to open weights, and Block Dessa as related work without public weights.
+- Listed PolyAI Dialog-RSN-1 as a candidate pending documented pricing and controls.
+
+Only the Grok and Eleven rows were re-reviewed; other rows keep their 2026-09-15 dates.
+
 ## 2026-09-27
 
 - Added a website at realtime.mahimai.ca, built from this README by `site/`. The README stays the source; the site renders its sections, control matrix, and pricing estimates.
